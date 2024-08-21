@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "cppvsdbg",
+            "request": "launch",
+            "name": "Debug",
+            "program": "${workspaceFolder}/zig-out/bin/ZigFireWorks.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/zig-out/bin/",
+            "preLaunchTask": "zig build",
+            "console": "integratedTerminal"
+        },
+    ]
+}
