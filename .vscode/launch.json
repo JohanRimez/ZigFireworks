@@ -8,8 +8,9 @@
             "program": "${workspaceFolder}/zig-out/bin/ZigFireWorks.exe",
             "args": [],
             "cwd": "${workspaceFolder}/zig-out/bin/",
+            "console": "integratedTerminal",
             "preLaunchTask": "zig build",
-            "console": "integratedTerminal"
+            "stopAtEntry": false,
         },
     ]
 }

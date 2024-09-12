@@ -1,5 +1,5 @@
 const std = @import("std");
-const sdl = @cImport(@cInclude("C:\\Users\\Public\\Includes\\SDL2\\include\\SDL.h"));
+const sdl = @import("SDLimport.zig");
 pub const list = std.ArrayList;
 
 // Main parameters
