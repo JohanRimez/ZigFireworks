@@ -1,5 +1,5 @@
 const std = @import("std");
-const sdl = @import("SDLimport.zig");
+const sdl = @import("cImport.zig");
 pub const list = std.ArrayList;
 
 // Main parameters
@@ -30,8 +30,8 @@ const refr: comptime_float = @as(f32, @floatFromInt(refreshrate)) / 1000.0;
 const grav: comptime_float = gravity * refr * refr;
 
 fn ColorCode(hue: f32, code: f32) u8 {
-	// Saturated colors at maximum brightness
-	// codes: red = 5.0, green = 3.0, blue = 1.0
+    // Saturated colors at maximum brightness
+    // codes: red = 5.0, green = 3.0, blue = 1.0
     const k = @mod((code + 6.0 * hue), 6.0);
     const res = 1.0 - @max(0.0, @min(1.0, @min(k, 4.0 - k)));
     return @as(u8, @intFromFloat(255.0 * res));
@@ -131,11 +131,11 @@ const FireWorks = struct {
                 for (0..nParticles) |_| try self.particles.append(Particle.init(rocket.x, rocket.y, hue));
             }
         }
-        while(self.removelist.popOrNull()) |index| _ = self.rockets.swapRemove(index);
+        while (self.removelist.popOrNull()) |index| _ = self.rockets.swapRemove(index);
         for (self.particles.items, 0..) |*particle, index| {
             if (particle.update()) try self.removelist.append(index);
         }
-        while(self.removelist.popOrNull()) |index| _ = self.particles.swapRemove(index);
+        while (self.removelist.popOrNull()) |index| _ = self.particles.swapRemove(index);
         // Launch a new rocket?
         if (prgn.random().float(f32) < self.rocketrate) {
             try self.rockets.append(Rocket.init());
@@ -154,21 +154,27 @@ pub fn main() !void {
     try std.posix.getrandom(std.mem.asBytes(&seed));
     prgn = std.Random.DefaultPrng.init(seed);
     // initialise SDL
-    if (sdl.SDL_Init(sdl.SDL_INIT_TIMER) != 0) {
+    if (sdl.SDL_Init(sdl.SDL_INIT_TIMER | sdl.SDL_INIT_VIDEO) != 0) {
         std.debug.print("SDL initialisation error: {s}\n", .{sdl.SDL_GetError()});
         return error.sdl_initialisationerror;
     }
     defer sdl.SDL_Quit();
+    // Prepare full screen (stable alternative for linux)
+    var dm: sdl.SDL_DisplayMode = undefined;
+    if (sdl.SDL_GetDisplayMode(0, 0, &dm) != 0) {
+        std.debug.print("SDL GetDisplayMode error: {s}\n", .{sdl.SDL_GetError()});
+        return error.sdl_initialisationerror;
+    }
     const window: *sdl.SDL_Window = sdl.SDL_CreateWindow(
         "Game window",
         0,
         0,
-        1600,
-        900,
-        sdl.SDL_WINDOW_FULLSCREEN_DESKTOP,
+        dm.w,
+        dm.h,
+        sdl.SDL_WINDOW_BORDERLESS | sdl.SDL_WINDOW_MAXIMIZED,
     ) orelse {
         std.debug.print("SDL window creation failed: {s}\n", .{sdl.SDL_GetError()});
-        return error.sdl_windowcreationfailed;
+        return error.sdl_initialisationerror;
     };
     defer sdl.SDL_DestroyWindow(window);
     _ = sdl.SDL_GetWindowSize(window, @ptrCast(&width), @ptrCast(&height));
@@ -184,6 +190,12 @@ pub fn main() !void {
     // Initialise fireworks
     var fireworks = FireWorks.init();
     defer fireworks.deinit();
+
+    // Tweak background openGL to avoid screen flickering
+    if (sdl.SDL_GL_GetCurrentContext() != null) {
+        _ = sdl.SDL_GL_SetSwapInterval(1);
+        std.debug.print("Adapted current openGL context for vSync\n", .{});
+    }
 
     // Hide mouse
     _ = sdl.SDL_ShowCursor(sdl.SDL_DISABLE);
